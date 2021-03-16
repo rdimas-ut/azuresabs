@@ -49,7 +49,7 @@ def main(req: func.HttpRequest, sharepointInputBlob: func.InputStream, sharepoin
     qboAuthInputBlob: func.InputStream, qboAuthOutputBlob: func.Out[func.InputStream], 
     DBInputBlob: func.InputStream, DBOutputBlob: func.Out[func.InputStream]) -> func.HttpResponse:
 
-    dispatcher = {"createInvoice": createInvoice,"getState": getState, "insert": insert, "delete": delete, "execute": execute, "update":update, "refreshCustomer": refreshCustomer, "refreshVendor": refreshVendor, "revokeTokens": revokeTokens, "refreshItem": refreshItem, "refreshAccount": refreshAccount }
+    dispatcher = {"sharepoint": sharepoint,"createInvoice": createInvoice,"getState": getState, "insert": insert, "delete": delete, "execute": execute, "update":update, "refreshCustomer": refreshCustomer, "refreshVendor": refreshVendor, "revokeTokens": revokeTokens, "refreshItem": refreshItem, "refreshAccount": refreshAccount }
     
     global qboauth
     global appstate
@@ -308,8 +308,6 @@ def insert(tableName, dataDict):
     c.execute(insert_commd)
     conn.commit()
     conn.close()
-
-    sharepoint()
 
     return func.HttpResponse("Successful insert", status_code=200)
 
