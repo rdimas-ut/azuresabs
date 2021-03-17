@@ -9,7 +9,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     client_id = "ABNUyCiXJi38M8E4UGcZK1Rd7MrNLcSX9aRneVpRHdPNyD6K1B"
     client_secret = "k8OCVN3wwkhKvTga6xcM1W8HAff6HOx256g0Vzmg"
-    redirect_uri = "https://sabstestfunc.azurewebsites.net/api/SABSAPP"
+    redirect_uri = "https://sabsdemo.azurewebsites.net/api/SABSAPP"
     local_redirect = "http://localhost:7071/api/SABSAPP"
     environment = "sandbox"
 

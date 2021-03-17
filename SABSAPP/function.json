@@ -12,52 +12,52 @@
       "name": "sharepointInputBlob",
       "type": "blob",
       "dataType": "binary",
-      "path": "https://storageaccounttesti9fca.blob.core.windows.net/sabsappdata/sharepoint.json",
+      "path": "https://storageaccountsabsdaa4e.blob.core.windows.net/sabsappdata/sharepoint.json",
       "direction": "in"
     },
     {
       "name": "appStateInputBlob",
       "type": "blob",
       "dataType": "binary",
-      "path": "https://storageaccounttesti9fca.blob.core.windows.net/sabsappdata/appstate.json",
+      "path": "https://storageaccountsabsdaa4e.blob.core.windows.net/sabsappdata/appstate.json",
       "direction": "in"
     },
     {
       "name": "qboAuthInputBlob",
       "type": "blob",
       "dataType": "binary",
-      "path": "https://storageaccounttesti9fca.blob.core.windows.net/sabsappdata/qboauth.json",
+      "path": "https://storageaccountsabsdaa4e.blob.core.windows.net/sabsappdata/qboauth.json",
       "direction": "in"
     },
     {
       "name": "DBInputBlob",
       "type": "blob",
       "dataType": "binary",
-      "path": "https://storageaccounttesti9fca.blob.core.windows.net/sabsappdata/sabs.db",
+      "path": "https://storageaccountsabsdaa4e.blob.core.windows.net/sabsappdata/sabs.db",
       "direction": "in"
     },
     {
       "name": "sharepointOutputBlob",
       "type": "blob",
-      "path": "https://storageaccounttesti9fca.blob.core.windows.net/sabsappdata/sharepoint.json",
+      "path": "https://storageaccountsabsdaa4e.blob.core.windows.net/sabsappdata/sharepoint.json",
       "direction": "out"
     },
     {
       "name": "appStateOutputBlob",
       "type": "blob",
-      "path": "https://storageaccounttesti9fca.blob.core.windows.net/sabsappdata/appstate.json",
+      "path": "https://storageaccountsabsdaa4e.blob.core.windows.net/sabsappdata/appstate.json",
       "direction": "out"
     },
     {
       "name": "qboAuthOutputBlob",
       "type": "blob",
-      "path": "https://storageaccounttesti9fca.blob.core.windows.net/sabsappdata/qboauth.json",
+      "path": "https://storageaccountsabsdaa4e.blob.core.windows.net/sabsappdata/qboauth.json",
       "direction": "out"
     },
     {
       "name": "DBOutputBlob",
       "type": "blob",
-      "path": "https://storageaccounttesti9fca.blob.core.windows.net/sabsappdata/sabs.db",
+      "path": "https://storageaccountsabsdaa4e.blob.core.windows.net/sabsappdata/sabs.db",
       "direction": "out"
     },
     {
