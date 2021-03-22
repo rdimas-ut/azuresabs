@@ -15,7 +15,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     # client_id = "ABk4eNRUFOjro5VRTLTo06IMl7JRejucH1pbu7ebjubGp5Ry5j"
     # client_secret = "OWLpShucAM9fVlG1tl0Awf2PslzxbbbctYRJkfLK"
-    # redirect_uri = "https://sabstestfunc.azurewebsites.net/api/SABSAPP"
+    # redirect_uri = "https://sabsdepone.azurewebsites.net/api/SABSAPP"
     # environment = "production"
 
     auth_client = AuthClient(

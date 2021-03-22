@@ -12,6 +12,8 @@ from office365.sharepoint.client_context import ClientContext
 from office365.runtime.auth.user_credential import UserCredential
 
 from intuitlib.client import AuthClient
+from intuitlib.exceptions import AuthClientError
+
 from quickbooks import QuickBooks
 from quickbooks.objects.customer import Customer
 from quickbooks.objects.vendor import Vendor
@@ -22,6 +24,7 @@ from quickbooks.objects.invoice import Invoice
 from quickbooks.objects.detailline import SalesItemLine
 from quickbooks.objects.detailline import SalesItemLineDetail
 
+
 defaultres = func.HttpResponse("This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",status_code=200)
 
 # Start of qbo authentication
@@ -30,12 +33,30 @@ defaultres = func.HttpResponse("This HTTP triggered function executed successful
 # redirect_uri = "https://sabstestfunc.azurewebsites.net/api/SABSAPP"
 # environment = "production"
 
+# LOCAL
+# local_redirect = "http://localhost:7071/api/SABSAPP"
+
+# SABSTESFUNC
+# redirect_uri = "https://sabstestfunc.azurewebsites.net/api/SABSAPP"
+
+# SABSDEMO
+redirect_uri = "https://sabsdemo.azurewebsites.net/api/SABSAPP"
+
+# # SABSDEPONE
+# redirect_uri = "https://sabsdepone.azurewebsites.net/api/SABSAPP"
+
+# # Test App Production
+# client_id = "ABk4eNRUFOjro5VRTLTo06IMl7JRejucH1pbu7ebjubGp5Ry5j"
+# client_secret = "OWLpShucAM9fVlG1tl0Awf2PslzxbbbctYRJkfLK"
+# environment = "production"
+
+# Test App Development
 client_id = "ABNUyCiXJi38M8E4UGcZK1Rd7MrNLcSX9aRneVpRHdPNyD6K1B"
 client_secret = "k8OCVN3wwkhKvTga6xcM1W8HAff6HOx256g0Vzmg"
-# redirect_uri = "https://sabstestfunc.azurewebsites.net/api/SABSAPP"
-redirect_uri = "https://sabsdemo.azurewebsites.net/api/SABSAPP"
-local_redirect = "http://localhost:7071/api/SABSAPP"
 environment = "sandbox"
+
+
+
 
 auth_client = AuthClient(
     client_id,
@@ -50,7 +71,7 @@ def main(req: func.HttpRequest, sharepointInputBlob: func.InputStream, sharepoin
     qboAuthInputBlob: func.InputStream, qboAuthOutputBlob: func.Out[func.InputStream], 
     DBInputBlob: func.InputStream, DBOutputBlob: func.Out[func.InputStream]) -> func.HttpResponse:
 
-    dispatcher = {"sharepoint": sharepoint,"createInvoice": createInvoice,"getState": getState, "insert": insert, "delete": delete, "execute": execute, "update":update, "refreshCustomer": refreshCustomer, "refreshVendor": refreshVendor, "revokeTokens": revokeTokens, "refreshItem": refreshItem, "refreshAccount": refreshAccount }
+    dispatcher = {"refreshQBOData": refreshQBOData, "sharepoint": sharepoint,"createInvoice": createInvoice,"getState": getState, "insert": insert, "delete": delete, "execute": execute, "update":update, "refreshCustomer": refreshCustomer, "refreshVendor": refreshVendor, "revokeTokens": revokeTokens, "refreshItem": refreshItem, "refreshAccount": refreshAccount }
     
     global qboauth
     global appstate
@@ -251,6 +272,16 @@ def refreshAccount():
 
     return func.HttpResponse("Successful refresh accounts", status_code=200)
 
+def refreshQBOData():
+    if isSignedInQBO:
+        refreshAccount()
+        refreshCustomer()
+        refreshItem()
+        refreshVendor()
+        return func.HttpResponse("Successful refresh qbo data", status_code=200)
+    else:
+        return func.HttpResponse("QBO Data is not available", status_code=201)
+
 # Creates the new invoice in QB and the SABS DB
 def createInvoice(invData, invLines): 
     global isSignedInQBO
@@ -279,7 +310,11 @@ def createInvoice(invData, invLines):
             query_invoice = Invoice.get(invoice.Id, qb=client) 
 
             inv_dict = {"IID": query_invoice.Id, "InvNum": invData.get("InvDate"), "Customer": invData.get("Customer"), "TotalDue": query_invoice.TotalAmt, "Balance": query_invoice.Balance}
-            insert("Invoice", inv_dict) 
+            insert("Invoice", inv_dict)
+        else:
+            return func.HttpResponse("QBO not available. Please sign in again", status_code=201)
+    else:
+        return func.HttpResponse("QBO not available. Please sign in again", status_code=201)
 
     return func.HttpResponse("Successful create invoice", status_code=200)
 
@@ -454,7 +489,8 @@ def refreshTokens(rf_token):
         }
 
         isSignedInQBO = True
-    finally:
+    except AuthClientError:
+        logging.info("An AuthClientError was raised.")
         qboauth = {
         "realm_id": "",
         "access_token": "",
