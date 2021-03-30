@@ -20,9 +20,14 @@ from quickbooks.objects.vendor import Vendor
 from quickbooks.objects.item import Item
 from quickbooks.objects.account import Account
 
+from quickbooks.objects.bill import Bill
+from quickbooks.objects.detailline import AccountBasedExpenseLine, AccountBasedExpenseLineDetail
+
 from quickbooks.objects.invoice import Invoice
 from quickbooks.objects.detailline import SalesItemLine
 from quickbooks.objects.detailline import SalesItemLineDetail
+
+from quickbooks.objects.base import CustomerMemo
 
 
 defaultres = func.HttpResponse("This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",status_code=200)
@@ -71,7 +76,7 @@ def main(req: func.HttpRequest, sharepointInputBlob: func.InputStream, sharepoin
     qboAuthInputBlob: func.InputStream, qboAuthOutputBlob: func.Out[func.InputStream], 
     DBInputBlob: func.InputStream, DBOutputBlob: func.Out[func.InputStream]) -> func.HttpResponse:
 
-    dispatcher = {"refreshQBOData": refreshQBOData, "sharepoint": sharepoint,"createInvoice": createInvoice,"getState": getState, "insert": insert, "delete": delete, "execute": execute, "update":update, "refreshCustomer": refreshCustomer, "refreshVendor": refreshVendor, "revokeTokens": revokeTokens, "refreshItem": refreshItem, "refreshAccount": refreshAccount }
+    dispatcher = {"createBill": createBill, "refreshQBOData": refreshQBOData, "sharepoint": sharepoint,"createInvoice": createInvoice,"getState": getState, "insert": insert, "delete": delete, "execute": execute, "update":update, "refreshCustomer": refreshCustomer, "refreshVendor": refreshVendor, "revokeTokens": revokeTokens, "refreshItem": refreshItem, "refreshAccount": refreshAccount }
     
     global qboauth
     global appstate
@@ -272,6 +277,7 @@ def refreshAccount():
 
     return func.HttpResponse("Successful refresh accounts", status_code=200)
 
+# Refreshes QBO Data
 def refreshQBOData():
     if isSignedInQBO:
         refreshAccount()
@@ -285,6 +291,10 @@ def refreshQBOData():
 # Creates the new invoice in QB and the SABS DB
 def createInvoice(invData, invLines): 
     global isSignedInQBO
+
+    invoicememo = CustomerMemo()
+    invoicememo.value = "Hey, whats happening"
+
     if isSignedInQBO:
         global client
         customer = ""
@@ -295,6 +305,10 @@ def createInvoice(invData, invLines):
         if customer:
             invoice = Invoice()
             invoice.CustomerRef = customer.to_ref()
+            invoice.BillEmail = customer.PrimaryEmailAddr
+            # invoice.DueDate = "2021-04-01"
+            # invoice.CustomerMemo = invoicememo
+
 
             for li in invLines:
                 line = SalesItemLine()
@@ -311,6 +325,54 @@ def createInvoice(invData, invLines):
 
             inv_dict = {"IID": query_invoice.Id, "InvNum": invData.get("InvDate"), "Customer": invData.get("Customer"), "TotalDue": query_invoice.TotalAmt, "Balance": query_invoice.Balance}
             insert("Invoice", inv_dict)
+        else:
+            return func.HttpResponse("QBO not available. Please sign in again", status_code=201)
+    else:
+        return func.HttpResponse("QBO not available. Please sign in again", status_code=201)
+
+    return func.HttpResponse("Successful create invoice", status_code=200)
+
+# Creates the new Bill in QB and the SABS DB
+def createBill(billData, billLines):
+    global isSignedInQBO
+
+    if isSignedInQBO:
+        global client
+        vendor = ""
+        for ven in Vendor.all(qb=client):
+            if str(ven) == billData.get("Vendor"):
+                vendor = ven
+        
+        if vendor:
+            bill = Bill()
+
+            for li in billLines:
+                line = AccountBasedExpenseLine()
+                line.Amount = li.Amount
+                line.DetailType = "AccountBasedExpenseLineDetail"
+                line.AccountBasedExpenseLineDetail = AccountBasedExpenseLineDetail()
+
+                account = ""
+                customer = ""
+
+                for act in Account.all(qb=client):
+                    if str(act) == li.get("Category"):
+                        line.AccountBasedExpenseLineDetail.AccountRef = act.to_ref()
+                
+                for cust in Customer.all(qb=client):
+                    if str(cust) == li.get("Customer"):
+                        line.AccountBasedExpenseLineDetail.CustomerRef = cust.to_ref()
+
+                if account and customer:
+                    bill.Line.append(line)
+                    bill.VendorRef = vendor.to_ref()
+        
+            bill.save(qb=client)
+            query_bill = Bill.get(bill.Id, qb=client)
+
+            inv_dict = {"BID": query_bill.Id, "BillNum": billData.get("BillDate"), "Vendor": billData.get("Vendor"), "TotalDue": query_bill.TotalAmt, "Balance": query_bill.Balance}
+            insert("Bill", inv_dict)
+            logging.info(query_bill)
         else:
             return func.HttpResponse("QBO not available. Please sign in again", status_code=201)
     else:
