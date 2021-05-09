@@ -29,6 +29,8 @@ from quickbooks.objects.detailline import SalesItemLineDetail
 
 from quickbooks.objects.base import CustomerMemo
 
+from time import strftime, localtime
+
 
 defaultres = func.HttpResponse("This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",status_code=200)
 
@@ -292,8 +294,13 @@ def refreshQBOData():
 def createInvoice(invData, invLines): 
     global isSignedInQBO
 
+
+    # Takes the unix epoch time in ms to YYYY-MM-DD
+    new_invoice_date = strftime("%Y-%m-01",localtime(int(invData.get("InvDate")/1000)))
+    new_invoice_month = strftime("%b",localtime(int(invData.get("InvDate")/1000)))
     invoicememo = CustomerMemo()
-    invoicememo.value = "Hey, whats happening"
+    
+    invoicememo.value = "Please note: \nPayments are due " + new_invoice_month + " 1st, but must be received no later than the " + new_invoice_month + " 15th or your stop loss insurance policy could lapse."
 
     if isSignedInQBO:
         global client
@@ -306,8 +313,8 @@ def createInvoice(invData, invLines):
             invoice = Invoice()
             invoice.CustomerRef = customer.to_ref()
             invoice.BillEmail = customer.PrimaryEmailAddr
-            # invoice.DueDate = "2021-04-01"
-            # invoice.CustomerMemo = invoicememo
+            invoice.DueDate = new_invoice_date
+            invoice.CustomerMemo = invoicememo
 
 
             for li in invLines:
@@ -345,27 +352,34 @@ def createBill(billData, billLines):
         
         if vendor:
             bill = Bill()
+            bill.VendorRef = vendor.to_ref()
 
             for li in billLines:
                 line = AccountBasedExpenseLine()
-                line.Amount = li.Amount
+                logging.info(li)
+                line.Amount = li.get("Amount")
+                line.Description = li.get('Description')
                 line.DetailType = "AccountBasedExpenseLineDetail"
                 line.AccountBasedExpenseLineDetail = AccountBasedExpenseLineDetail()
 
-                account = ""
-                customer = ""
+                account = False
+                customer = False
 
                 for act in Account.all(qb=client):
                     if str(act) == li.get("Category"):
+                        account = True
                         line.AccountBasedExpenseLineDetail.AccountRef = act.to_ref()
                 
                 for cust in Customer.all(qb=client):
                     if str(cust) == li.get("Customer"):
+                        customer = True
                         line.AccountBasedExpenseLineDetail.CustomerRef = cust.to_ref()
 
+                logging.info(customer)
+                logging.info(account)
                 if account and customer:
+                    logging.info("Successful line insert")
                     bill.Line.append(line)
-                    bill.VendorRef = vendor.to_ref()
         
             bill.save(qb=client)
             query_bill = Bill.get(bill.Id, qb=client)
