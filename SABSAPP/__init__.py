@@ -478,6 +478,7 @@ def update(tableName, dataDict, searchDict):
 
     return func.HttpResponse("Successful update", status_code=200)
 
+# Sharepoint csv exports
 def sharepoint():
     global sabsdb
     global sharepoint_cred
@@ -515,7 +516,7 @@ def sharepoint():
     conn.close()
     fpcsv.close() 
 
-    return None
+    return func.HttpResponse(status_code=200)
 
 # Handles sign in to qbo
 def handleRedirect(code, realmId):
