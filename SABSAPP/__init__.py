@@ -7,6 +7,7 @@ import sqlite3
 import tempfile
 
 import pandas as pd
+import datetime
 
 from office365.sharepoint.client_context import ClientContext
 from office365.runtime.auth.user_credential import UserCredential
@@ -504,13 +505,34 @@ def sharepoint():
     for table_name in tables:
         table_name = table_name[0]
         table = pd.read_sql("SELECT * from %s" % table_name, conn)
-        table.to_csv(fpcsv.name, index=False)
+        
+
+        if table_name == "CensusLog":
+            table["InvDate"] = table["InvDate"].apply(readable_time)
+            table["CovDate"] = table["CovDate"].apply(readable_time)
+            table["DTS"] = table["DTS"].apply(readable_time)
+
+        if table_name == "Policy":
+            table["StartDate"] = table["StartDate"].apply(readable_time)
 
         with open(fpcsv.name, 'rb') as content_file:
             file_content = content_file.read()
 
+        table.to_csv(fpcsv.name, index=False)
         target_file = target_folder.upload_file(table_name + '.csv', file_content)
         ctx.execute_query()
+
+    table = pd.read_sql("SELECT * from Census", conn)
+    table["InvDate"] = table["InvDate"].apply(readable_time)
+    table["CovDate"] = table["CovDate"].apply(readable_time)
+    table.to_csv(fpcsv.name, index=False)
+
+    with open(fpcsv.name, 'rb') as content_file:
+        file_content = content_file.read()
+
+    target_file = target_folder.upload_file("Census" + '.csv', file_content)
+    ctx.execute_query()
+    
 
     c.close()
     conn.close()
@@ -627,3 +649,14 @@ def initialize():
         )
 
     return None
+
+def readable_time(timeValue):
+    if isinstance(timeValue, str):
+        return ""
+    elif isinstance(timeValue, int) :
+        if (len(str(timeValue)) > 10):
+            return datetime.datetime.fromtimestamp(int(timeValue/1000))
+        else:
+            return datetime.datetime.fromtimestamp(timeValue)
+
+    return ""
