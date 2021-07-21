@@ -503,23 +503,24 @@ def sharepoint():
     tables = c.fetchall()
 
     for table_name in tables:
-        table_name = table_name[0]
-        table = pd.read_sql("SELECT * from %s" % table_name, conn)
+        tname = table_name[0]
+        table = pd.read_sql("SELECT * from %s" % tname, conn)
         
 
-        if table_name == "CensusLog":
+        if tname == "CensusLog":
             table["InvDate"] = table["InvDate"].apply(readable_time)
             table["CovDate"] = table["CovDate"].apply(readable_time)
             table["DTS"] = table["DTS"].apply(readable_time)
 
-        if table_name == "Policy":
+        if tname == "Policy":
             table["StartDate"] = table["StartDate"].apply(readable_time)
+        
+        table.to_csv(fpcsv.name, index=False)
 
         with open(fpcsv.name, 'rb') as content_file:
             file_content = content_file.read()
-
-        table.to_csv(fpcsv.name, index=False)
-        target_file = target_folder.upload_file(table_name + '.csv', file_content)
+    
+        target_file = target_folder.upload_file(tname + '.csv', file_content)
         ctx.execute_query()
 
     table = pd.read_sql("SELECT * from Census", conn)
